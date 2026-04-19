@@ -107,16 +107,23 @@ function renderNav(pagina) {
 
 // Verificação de login em todas as páginas protegidas
 function protegerPagina(callback) {
-  initGoogleAuth(() => {
-    if (!isLoggedIn()) { window.location.href = 'index.html'; return; }
-    loading(true, 'Carregando dados...');
-    inicializarPlanilha().then(() => {
-      loading(false);
-      callback && callback();
-    }).catch(e => {
-      loading(false);
-      toast('Erro ao conectar com Google Sheets. Tente novamente.', 'erro');
-      console.error(e);
+  function tentarInit() {
+    if (typeof google === 'undefined') {
+      setTimeout(tentarInit, 100);
+      return;
+    }
+    initGoogleAuth(() => {
+      if (!isLoggedIn()) { window.location.href = 'index.html'; return; }
+      loading(true, 'Carregando dados...');
+      inicializarPlanilha().then(() => {
+        loading(false);
+        callback && callback();
+      }).catch(e => {
+        loading(false);
+        toast('Erro ao conectar com Google Sheets. Tente novamente.', 'erro');
+        console.error(e);
+      });
     });
-  });
+  }
+  tentarInit();
 }
