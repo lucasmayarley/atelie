@@ -10,7 +10,7 @@ const CONFIG = {
   CLIENT_ID: '197039872362-nq3f580952r3njgo2doggo691m1d12tm.apps.googleusercontent.com',
 
   // ID da planilha Google Sheets (parte da URL entre /d/ e /edit)
-  SHEET_ID: 'SEU_SHEET_ID_AQUI',
+  SHEET_ID: '1zNnD_ZJ66vF_3TYroXk-bZbSOgaJPe1R-TGiNYBS5hc',
 
   // Escopos necessários
   SCOPES: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
