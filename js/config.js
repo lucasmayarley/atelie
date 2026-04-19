@@ -7,7 +7,7 @@ const CONFIG = {
   // 3. Crie credenciais OAuth 2.0 (Aplicativo da Web)
   // 4. Adicione a URL do seu GitHub Pages como origem autorizada
   // 5. Cole o Client ID abaixo
-  CLIENT_ID: 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com',
+  CLIENT_ID: '197039872362-nq3f580952r3njgo2doggo691m1d12tm.apps.googleusercontent.com',
 
   // ID da planilha Google Sheets (parte da URL entre /d/ e /edit)
   SHEET_ID: 'SEU_SHEET_ID_AQUI',
