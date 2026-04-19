@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Ateliê da Costura</title>
+  <link rel="stylesheet" href="global.css">
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 24px; background: var(--bg); }
+    .login-logo { margin-bottom: 12px; }
+    .login-logo svg { width: 64px; height: 64px; }
+    .login-titulo { font-family: var(--fonte-titulo); font-size: 28px; color: var(--texto); text-align: center; margin-bottom: 6px; }
+    .login-sub { font-size: 14px; color: var(--texto-2); text-align: center; margin-bottom: 48px; line-height: 1.6; }
+    .login-card { width: 100%; max-width: 340px; background: var(--bg-card); border: 1px solid var(--cinza-borda); border-radius: var(--radius-lg); padding: 28px 24px; text-align: center; box-shadow: var(--sombra); }
+    .login-card h2 { font-family: var(--fonte-titulo); font-size: 16px; margin-bottom: 6px; }
+    .login-card p { font-size: 13px; color: var(--texto-2); margin-bottom: 20px; line-height: 1.5; }
+    .btn-google { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px; border-radius: var(--radius); border: 1px solid var(--cinza-borda); background: white; color: var(--texto); font-size: 14px; font-weight: 500; cursor: pointer; transition: box-shadow 0.15s; font-family: var(--fonte-corpo); }
+    .btn-google:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .rodape { position: fixed; bottom: 20px; font-size: 11px; color: var(--texto-3); }
+    .faixa { width: 100%; height: 4px; background: linear-gradient(90deg, var(--verde), var(--amber), var(--verde)); position: fixed; top: 0; }
+  </style>
+</head>
+<body>
+  <div class="faixa"></div>
+
+  <div class="login-logo">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="32" fill="#E1F5EE"/>
+      <path d="M20 44 C20 44 24 28 32 24 C40 20 44 28 44 28" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M32 24 C32 24 30 32 28 36 C26 40 24 44 24 44" stroke="#1D9E75" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="32" cy="22" r="3" fill="#1D9E75"/>
+      <path d="M26 34 Q32 30 38 34" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M22 40 Q32 35 42 40" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    </svg>
+  </div>
+
+  <h1 class="login-titulo">Ateliê da Costura</h1>
+  <p class="login-sub">Sistema de gestão de clientes,<br>pedidos e financeiro</p>
+
+  <div class="login-card">
+    <h2>Bem-vinda de volta</h2>
+    <p>Entre com sua conta Google para acessar seus dados com segurança</p>
+    <button class="btn-google" onclick="entrar()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Entrar com Google
+    </button>
+  </div>
+
+  <p class="rodape">Seus dados ficam salvos na sua conta Google</p>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    initGoogleAuth(() => {
+      if (isLoggedIn()) window.location.href = 'pedidos.html';
+    });
+    function entrar() { requestLogin(); }
+    window.addEventListener('message', (e) => {
+      if (isLoggedIn()) window.location.href = 'pedidos.html';
+    });
+    // Redireciona após login
+    const orig = window.initGoogleAuth;
+    initGoogleAuth(() => {
+      if (isLoggedIn()) window.location.href = 'pedidos.html';
+    });
+  </script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</body>
+</html>

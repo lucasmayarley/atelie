@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Pedidos — Ateliê</title>
+  <link rel="stylesheet" href="global.css">
+  <style>
+    .pedido-card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .pedido-tipo-icon { width: 40px; height: 40px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .pedido-icon-ind { background: var(--verde-light); }
+    .pedido-icon-grp { background: var(--azul-light); }
+    .pedido-card-info { flex: 1; min-width: 0; }
+    .pedido-nome { font-size: 15px; font-weight: 500; }
+    .pedido-sub { font-size: 12px; color: var(--texto-2); margin-top: 2px; }
+    .pedido-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--cinza-borda); }
+    .pedido-prazo { font-size: 12px; color: var(--texto-3); }
+    .pedido-prazo.urgente { color: var(--vermelho); font-weight: 500; }
+    .pedido-prazo.proximo { color: var(--amber); font-weight: 500; }
+
+    /* Detalhe do pedido */
+    .detalhe-section { margin-bottom: 20px; }
+    .detalhe-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--cinza-borda); font-size: 14px; }
+    .detalhe-row:last-child { border-bottom: none; }
+    .detalhe-label { color: var(--texto-2); font-size: 13px; }
+    .detalhe-val { font-weight: 500; text-align: right; }
+
+    /* Componentes do grupo no pedido */
+    .comp-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--cinza-borda); }
+    .comp-item:last-child { border-bottom: none; }
+    .comp-info { flex: 1; }
+    .comp-nome { font-size: 14px; font-weight: 500; }
+    .comp-status { font-size: 11px; color: var(--texto-3); margin-top: 2px; }
+
+    /* Medidas relevantes */
+    .medidas-relevantes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .med-rel-item { background: var(--cinza-light); border-radius: var(--radius); padding: 8px; }
+    .med-rel-nome { font-size: 11px; color: var(--texto-2); }
+    .med-rel-vals { display: flex; gap: 8px; margin-top: 4px; }
+    .med-rel-val { flex: 1; text-align: center; }
+    .med-rel-val strong { display: block; font-size: 14px; }
+    .med-rel-val span { font-size: 10px; color: var(--texto-3); }
+
+    /* Pagamentos */
+    .pag-resumo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .pag-stat { background: var(--cinza-light); border-radius: var(--radius); padding: 10px; text-align: center; }
+    .pag-stat-val { font-size: 16px; font-weight: 600; font-family: var(--fonte-titulo); }
+    .pag-stat-label { font-size: 10px; color: var(--texto-3); margin-top: 2px; }
+    .pag-entrada { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--cinza-borda); }
+    .pag-entrada:last-child { border-bottom: none; }
+
+    /* Precificação */
+    .prec-linha { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; color: var(--texto-2); }
+    .prec-total { font-size: 20px; font-weight: 600; font-family: var(--fonte-titulo); color: var(--verde-dark); }
+    .prec-box { background: var(--verde-light); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
+
+    .step { display: flex; gap: 12px; align-items: center; padding: 10px 0; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--verde); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .step-label { font-size: 14px; font-weight: 500; }
+    .step-sub { font-size: 12px; color: var(--texto-2); }
+
+    .tabs { display: flex; border-bottom: 1px solid var(--cinza-borda); margin-bottom: 16px; }
+    .tab { flex: 1; padding: 10px 4px; text-align: center; font-size: 13px; font-weight: 500; color: var(--texto-3); border-bottom: 2px solid transparent; cursor: pointer; }
+    .tab.ativo { color: var(--verde); border-bottom-color: var(--verde); }
+    .aba { display: none; }
+    .aba.ativa { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- LISTA DE PEDIDOS -->
+<div id="tela-lista">
+  <div class="page-header">
+    <h1>Pedidos</h1>
+    <button class="btn btn-sm btn-primary" onclick="abrirNovoPedido()" style="margin-left:auto">+ Novo</button>
+  </div>
+  <div class="page">
+    <div class="filtros">
+      <button class="filtro-btn ativo" data-f="ativos" onclick="setFiltro(this)">Em aberto</button>
+      <button class="filtro-btn" data-f="todos" onclick="setFiltro(this)">Todos</button>
+      <button class="filtro-btn" data-f="individual" onclick="setFiltro(this)">Individual</button>
+      <button class="filtro-btn" data-f="grupo" onclick="setFiltro(this)">Grupo</button>
+      <button class="filtro-btn" data-f="entregue" onclick="setFiltro(this)">Entregues</button>
+    </div>
+    <div id="lista-pedidos"></div>
+    <div id="empty-pedidos" class="empty" style="display:none">
+      <div class="empty-icon">📋</div>
+      <p>Nenhum pedido encontrado.</p>
+    </div>
+  </div>
+</div>
+
+<!-- DETALHE DO PEDIDO -->
+<div id="tela-detalhe" style="display:none">
+  <div class="page-header">
+    <button class="btn btn-ghost btn-sm" onclick="voltarLista()">← Voltar</button>
+    <h1 style="flex:1;font-size:15px;" id="det-titulo">Pedido</h1>
+    <button class="btn btn-sm" onclick="editarPedido()">Editar</button>
+  </div>
+  <div class="page">
+    <div class="tabs">
+      <div class="tab ativo" onclick="abaAtiva('info', this)">Informações</div>
+      <div class="tab" onclick="abaAtiva('medidas', this)">Medidas</div>
+      <div class="tab" onclick="abaAtiva('pagamento', this)">Pagamento</div>
+    </div>
+
+    <div id="aba-info" class="aba ativa">
+      <div class="detalhe-section" id="det-info"></div>
+      <div class="section-label">Status do pedido</div>
+      <select id="det-status-sel" style="width:100%;margin-bottom:12px;" onchange="atualizarStatus()"></select>
+      <div id="det-componentes" style="display:none">
+        <div class="section-label">Componentes do grupo</div>
+        <div id="lista-componentes-det"></div>
+      </div>
+    </div>
+
+    <div id="aba-medidas" class="aba">
+      <div id="det-medidas-content"></div>
+    </div>
+
+    <div id="aba-pagamento" class="aba">
+      <div class="pag-resumo" id="pag-resumo"></div>
+      <div class="section-label">Precificação</div>
+      <div id="det-precificacao"></div>
+      <button class="btn btn-full" style="margin:10px 0" onclick="abrirPrecificacao()">✏ Calcular / Atualizar preço</button>
+      <div class="section-label">Pagamentos recebidos</div>
+      <div id="lista-pagamentos-det"></div>
+      <button class="btn btn-full" style="margin-top:10px" onclick="abrirAddPagamento()">+ Registrar pagamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET: NOVO PEDIDO — PASSO 1: TIPO -->
+<div class="sheet-overlay" id="sheet-tipo">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-titulo">Novo pedido</div>
+    <div class="step"><div class="step-num">1</div><div><div class="step-label">Tipo de pedido</div><div class="step-sub">Individual ou para um grupo?</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
+      <button class="btn" style="flex-direction:column;gap:6px;padding:20px 10px;height:auto" onclick="setTipoPedido('individual')">
+        <span style="font-size:28px">👗</span>
+        <span style="font-weight:500">Individual</span>
+        <span style="font-size:11px;color:var(--texto-3)">Uma cliente</span>
+      </button>
+      <button class="btn" style="flex-direction:column;gap:6px;padding:20px 10px;height:auto" onclick="setTipoPedido('grupo')">
+        <span style="font-size:28px">🏛</span>
+        <span style="font-weight:500">Grupo</span>
+        <span style="font-size:11px;color:var(--texto-3)">Fardamento</span>
+      </button>
+    </div>
+    <button class="btn btn-full btn-ghost" onclick="fecharSheet('sheet-tipo')" style="margin-top:12px">Cancelar</button>
+  </div>
+</div>
+
+<!-- SHEET: NOVO PEDIDO — PASSO 2: FORM -->
+<div class="sheet-overlay" id="sheet-pedido">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-titulo" id="sheet-pedido-titulo">Pedido individual</div>
+
+    <!-- Individual -->
+    <div id="campos-individual">
+      <div class="form-group">
+        <label class="form-label">Cliente <span class="req">*</span></label>
+        <input type="text" id="p-busca-cliente" placeholder="Buscar cliente..." oninput="filtrarClientesPedido()">
+        <div id="p-lista-clientes" style="max-height:160px;overflow-y:auto;margin-top:4px;"></div>
+        <input type="hidden" id="p-cliente-id">
+        <div id="p-cliente-sel" style="font-size:13px;color:var(--verde);margin-top:4px;"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de peça <span class="req">*</span></label>
+        <select id="p-tipo-peca">
+          <option value="">Selecione...</option>
+          <option>Vestido</option><option>Blusa</option><option>Saia</option><option>Outro</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Grupo -->
+    <div id="campos-grupo" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Grupo <span class="req">*</span></label>
+        <select id="p-grupo-id" onchange="carregarComponentesGrupo()">
+          <option value="">Selecione o grupo...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de farda <span class="req">*</span></label>
+        <select id="p-tipo-farda">
+          <option value="">Selecione...</option>
+          <option>Vestido</option><option>Saia + Blusa</option><option>Só Saia</option><option>Só Blusa</option>
+        </select>
+      </div>
+      <div id="componentes-preview" style="display:none">
+        <div class="section-label">Componentes do grupo</div>
+        <div id="lista-comp-preview"></div>
+      </div>
+    </div>
+
+    <!-- Campos comuns -->
+    <div class="form-group">
+      <label class="form-label">Descrição / modelo</label>
+      <textarea id="p-desc" rows="2" placeholder="Ex: Vestido branco com renda, abaixo do joelho..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tecido</label>
+        <input type="text" id="p-tecido" placeholder="Ex: Crepe branco">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quem compra</label>
+        <select id="p-quem-tecido">
+          <option value="cliente">Cliente/Grupo</option>
+          <option value="costureira">Minha mãe</option>
+          <option value="combinado">A combinar</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Prazo de entrega</label>
+        <input type="date" id="p-prazo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status inicial</label>
+        <select id="p-status">
+          <option value="aguardando_tecido">Aguardando tecido</option>
+          <option value="em_producao">Em produção</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea id="p-obs" rows="2" placeholder="Detalhes extras..."></textarea>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="salvarPedido()">Criar pedido</button>
+    <button class="btn btn-full btn-ghost" onclick="fecharSheet('sheet-pedido')" style="margin-top:6px">Cancelar</button>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<!-- SHEET: PRECIFICAÇÃO -->
+<div class="sheet-overlay" id="sheet-prec">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-titulo">Calcular preço</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Metragem de tecido (m)</label>
+        <input type="number" id="pr-metro" step="0.1" placeholder="0" oninput="calcPreco()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor por metro (R$)</label>
+        <input type="number" id="pr-val-metro" step="0.5" placeholder="0" oninput="calcPreco()">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Aviamentos / materiais extras (R$)</label>
+      <input type="number" id="pr-aviamentos" step="0.5" placeholder="0" oninput="calcPreco()">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Horas de trabalho</label>
+        <input type="number" id="pr-horas" step="0.5" placeholder="0" oninput="calcPreco()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor por hora (R$)</label>
+        <input type="number" id="pr-val-hora" step="0.5" placeholder="0" oninput="calcPreco()">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Despesas extras (R$)</label>
+      <input type="number" id="pr-extras" step="0.5" placeholder="0" oninput="calcPreco()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Margem de lucro (%)</label>
+      <input type="number" id="pr-margem" step="1" placeholder="30" oninput="calcPreco()">
+    </div>
+    <div class="prec-box" id="prec-resultado">
+      <div class="prec-linha"><span>Custo de material</span><span id="pr-res-mat">R$ 0,00</span></div>
+      <div class="prec-linha"><span>Mão de obra</span><span id="pr-res-mao">R$ 0,00</span></div>
+      <div class="prec-linha"><span>Extras</span><span id="pr-res-ext">R$ 0,00</span></div>
+      <div class="prec-linha" style="border-top:1px solid rgba(0,0,0,0.1);padding-top:8px;margin-top:4px;"><span>Custo total</span><span id="pr-res-custo" style="font-weight:500">R$ 0,00</span></div>
+      <div class="prec-linha"><span>Margem (<span id="pr-res-pct">30</span>%)</span><span id="pr-res-margem">R$ 0,00</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.1);">
+        <span style="font-size:14px;color:var(--verde-dark);font-weight:500">Preço sugerido</span>
+        <span class="prec-total" id="pr-res-total">R$ 0,00</span>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:14px;">
+      <label class="form-label">Preço final confirmado (R$) <span class="req">*</span></label>
+      <input type="number" id="pr-final" step="0.5" placeholder="Confirme ou ajuste o valor">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="salvarPrecificacao()">Confirmar preço</button>
+    <button class="btn btn-full btn-ghost" onclick="fecharSheet('sheet-prec')" style="margin-top:6px">Cancelar</button>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<!-- SHEET: REGISTRAR PAGAMENTO -->
+<div class="sheet-overlay" id="sheet-pag">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-titulo">Registrar pagamento</div>
+    <div class="form-group">
+      <label class="form-label">Valor recebido (R$) <span class="req">*</span></label>
+      <input type="number" id="pg-valor" step="0.5" placeholder="0,00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Data</label>
+      <input type="date" id="pg-data">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Forma de pagamento</label>
+      <select id="pg-forma">
+        <option value="pix">Pix</option>
+        <option value="dinheiro">Dinheiro</option>
+        <option value="transferencia">Transferência</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <input type="text" id="pg-obs" placeholder="Ex: Sinal, parcela 1/3...">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="salvarPagamento()">Confirmar pagamento</button>
+    <button class="btn btn-full btn-ghost" onclick="fecharSheet('sheet-pag')" style="margin-top:6px">Cancelar</button>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<nav id="navbar"></nav>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let todosPedidos = [], todosClientes = [], todosGrupos = [], todosComponentes = [], todosPagamentos = [];
+  let filtroAtivo = 'ativos';
+  let pedidoAtualID = null;
+  let tipoPedidoNovo = null;
+
+  protegerPagina(async () => {
+    renderNav('pedidos');
+    await carregarDados();
+  });
+
+  async function carregarDados() {
+    loading(true, 'Carregando pedidos...');
+    try {
+      [todosPedidos, todosClientes, todosGrupos, todosComponentes, todosPagamentos] = await Promise.all([
+        lerAba(CONFIG.ABAS.PEDIDOS),
+        lerAba(CONFIG.ABAS.CLIENTES),
+        lerAba(CONFIG.ABAS.GRUPOS),
+        lerAba(CONFIG.ABAS.GRUPOS_COMPONENTES),
+        lerAba(CONFIG.ABAS.PAGAMENTOS)
+      ]);
+      renderLista();
+      // Preencher grupos no select
+      const sel = document.getElementById('p-grupo-id');
+      sel.innerHTML = '<option value="">Selecione o grupo...</option>';
+      todosGrupos.forEach(g => { sel.innerHTML += `<option value="${g.ID}">${g.Nome} — ${g.Congregacao||''}</option>`; });
+    } finally { loading(false); }
+  }
+
+  // ---- LISTA ----
+  function setFiltro(el) {
+    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+    el.classList.add('ativo');
+    filtroAtivo = el.dataset.f;
+    renderLista();
+  }
+
+  function diasParaPrazo(prazo) {
+    if (!prazo) return null;
+    return Math.ceil((new Date(prazo) - Date.now()) / 86400000);
+  }
+
+  function classePrazo(dias) {
+    if (dias === null) return '';
+    if (dias < 0) return 'urgente';
+    if (dias <= 7) return 'urgente';
+    if (dias <= 14) return 'proximo';
+    return '';
+  }
+
+  function labelPrazo(dias) {
+    if (dias === null) return 'Sem prazo';
+    if (dias < 0) return `Atrasado ${Math.abs(dias)}d`;
+    if (dias === 0) return 'Entrega hoje!';
+    return `${dias} dias`;
+  }
+
+  function renderLista() {
+    let lista = todosPedidos.filter(p => {
+      if (filtroAtivo === 'ativos') return p.Status !== 'entregue';
+      if (filtroAtivo === 'entregue') return p.Status === 'entregue';
+      if (filtroAtivo === 'individual') return p.Tipo === 'individual';
+      if (filtroAtivo === 'grupo') return p.Tipo === 'grupo';
+      return true;
+    }).sort((a, b) => {
+      if (!a.Prazo && !b.Prazo) return 0;
+      if (!a.Prazo) return 1;
+      if (!b.Prazo) return -1;
+      return new Date(a.Prazo) - new Date(b.Prazo);
+    });
+
+    const el = document.getElementById('lista-pedidos');
+    const empty = document.getElementById('empty-pedidos');
+    if (!lista.length) { el.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    el.innerHTML = lista.map(p => {
+      const isGrupo = p.Tipo === 'grupo';
+      const nome = isGrupo
+        ? (todosGrupos.find(g => g.ID === p.GrupoID)?.Nome || 'Grupo')
+        : (todosClientes.find(c => c.ID === p.ClienteID)?.Nome || 'Cliente');
+      const sub = isGrupo ? (p.TipoFarda || '—') : (p.TipoPeca || '—');
+      const dias = diasParaPrazo(p.Prazo);
+      const pgTotal = todosPagamentos.filter(pg => pg.PedidoID === p.ID).reduce((s, pg) => s + parseFloat(pg.Valor || 0), 0);
+      return `<div class="card card-clickable" onclick="verDetalhe('${p.ID}')">
+        <div class="pedido-card-header">
+          <div class="pedido-tipo-icon ${isGrupo ? 'pedido-icon-grp' : 'pedido-icon-ind'}">${isGrupo ? '🏛' : '👗'}</div>
+          <div class="pedido-card-info">
+            <div class="pedido-nome">${nome}</div>
+            <div class="pedido-sub">${sub}${p.Descricao ? ' · ' + p.Descricao.slice(0,40) : ''}</div>
+          </div>
+          ${badgePedido(p.Status)}
+        </div>
+        <div class="pedido-footer">
+          <span class="pedido-prazo ${classePrazo(dias)}">${labelPrazo(dias)}</span>
+          <span style="font-size:12px;color:var(--texto-3)">${p.PrecoFinal ? fmtReais(p.PrecoFinal) : 'Sem preço'} · ${pgTotal > 0 ? fmtReais(pgTotal) + ' pago' : 'Sem pagamento'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- DETALHE ----
+  async function verDetalhe(id) {
+    pedidoAtualID = id;
+    const p = todosPedidos.find(x => x.ID === id);
+    if (!p) return;
+    const isGrupo = p.Tipo === 'grupo';
+    const nome = isGrupo
+      ? (todosGrupos.find(g => g.ID === p.GrupoID)?.Nome || 'Grupo')
+      : (todosClientes.find(c => c.ID === p.ClienteID)?.Nome || 'Cliente');
+
+    document.getElementById('det-titulo').textContent = nome;
+
+    // Info
+    const infos = [
+      { label: 'Tipo', val: isGrupo ? 'Fardamento de grupo' : 'Pedido individual' },
+      { label: isGrupo ? 'Grupo' : 'Cliente', val: nome },
+      { label: isGrupo ? 'Tipo de farda' : 'Tipo de peça', val: isGrupo ? p.TipoFarda : p.TipoPeca },
+      { label: 'Descrição', val: p.Descricao || '—' },
+      { label: 'Tecido', val: (p.Tecido || '—') + (p.QuemCompraTecido ? ' · ' + { cliente: 'Fornecido pela cliente', costureira: 'Compra a costureira', combinado: 'A combinar' }[p.QuemCompraTecido] : '') },
+      { label: 'Prazo', val: fmtData(p.Prazo) },
+      { label: 'Criado em', val: fmtData(p.DataCriacao) },
+    ];
+    document.getElementById('det-info').innerHTML = infos.map(i =>
+      `<div class="detalhe-row"><span class="detalhe-label">${i.label}</span><span class="detalhe-val">${i.val || '—'}</span></div>`
+    ).join('');
+
+    // Status select
+    const selSt = document.getElementById('det-status-sel');
+    selSt.innerHTML = Object.entries(STATUS_PEDIDO).map(([k,v]) =>
+      `<option value="${k}" ${p.Status === k ? 'selected' : ''}>${v.label}</option>`).join('');
+
+    // Componentes grupo
+    const compDiv = document.getElementById('det-componentes');
+    if (isGrupo) {
+      compDiv.style.display = 'block';
+      const comps = todosComponentes.filter(c => c.GrupoID === p.GrupoID && !c.DataSaida);
+      const itens = await lerAba(CONFIG.ABAS.PEDIDOS_ITENS);
+      const itensPedido = itens.filter(i => i.PedidoID === id);
+      document.getElementById('lista-componentes-det').innerHTML = comps.map(c => {
+        const cli = todosClientes.find(x => x.ID === c.ClienteID);
+        const item = itensPedido.find(i => i.ClienteID === c.ClienteID);
+        return `<div class="comp-item">
+          <div class="avatar avatar-sm">${iniciais(cli?.Nome || '?')}</div>
+          <div class="comp-info">
+            <div class="comp-nome">${cli?.Nome || 'Desconhecida'}</div>
+            <div class="comp-status">${item ? STATUS_PEDIDO[item.Status]?.label || item.Status : 'Aguardando'}</div>
+          </div>
+          <select onchange="atualizarItemComp('${item?.ID || ''}', '${c.ClienteID}', this.value)" style="font-size:12px;padding:4px 6px;border-radius:6px;border:1px solid var(--cinza-borda);">
+            ${Object.entries(STATUS_PEDIDO).map(([k,v]) => `<option value="${k}" ${(item?.Status||'aguardando_tecido')===k?'selected':''}>${v.label}</option>`).join('')}
+          </select>
+        </div>`;
+      }).join('');
+    } else {
+      compDiv.style.display = 'none';
+    }
+
+    // Medidas
+    renderMedidasDetalhe(p);
+
+    // Pagamento
+    renderPagamentoDetalhe(p);
+
+    abaAtiva('info', document.querySelector('.tab'));
+    document.getElementById('tela-lista').style.display = 'none';
+    document.getElementById('tela-detalhe').style.display = 'block';
+  }
+
+  function renderMedidasDetalhe(p) {
+    const el = document.getElementById('det-medidas-content');
+    if (p.Tipo === 'grupo') {
+      const comps = todosComponentes.filter(c => c.GrupoID === p.GrupoID && !c.DataSaida);
+      const tipoFarda = p.TipoFarda || 'Fardamento';
+      const medidasRel = getMedidasRelevantes(tipoFarda);
+      el.innerHTML = comps.map(c => {
+        const cli = todosClientes.find(x => x.ID === c.ClienteID);
+        if (!cli) return '';
+        return `<div class="card" style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <div class="avatar avatar-sm">${iniciais(cli.Nome)}</div>
+            <span style="font-weight:500;font-size:14px">${cli.Nome}</span>
+          </div>
+          <div class="medidas-relevantes">${medidasRel.map(m => medidaCard(m, cli)).join('')}</div>
+        </div>`;
+      }).join('') || '<div class="empty"><p>Nenhuma componente neste pedido.</p></div>';
+    } else {
+      const cli = todosClientes.find(x => x.ID === p.ClienteID);
+      if (!cli) { el.innerHTML = '<div class="empty"><p>Cliente não encontrada.</p></div>'; return; }
+      const medidasRel = getMedidasRelevantes(p.TipoPeca);
+      el.innerHTML = `<div style="font-size:12px;color:var(--texto-3);margin-bottom:10px">Medidas de ${cli.DataAtualizacaoMedidas ? fmtData(cli.DataAtualizacaoMedidas) : 'data não registrada'}</div>
+        <div class="medidas-relevantes">${medidasRel.map(m => medidaCard(m, cli)).join('')}</div>`;
+    }
+  }
+
+  function getMedidasRelevantes(tipo) {
+    const mapa = {
+      'Vestido':     ['Busto','Cintura','Quadril','Altura do busto','Comprimento do vestido','Entre cava frente','Entre cava costas','Altura da cava'],
+      'Blusa':       ['Busto','Cintura','Costado','Altura da cava','Entre cava frente','Entre cava costas','Tamanho da manga','Largura da manga','Comprimento da blusa'],
+      'Saia':        ['Cintura da saia','Quadril','Altura do quadril (saia)','Comprimento da saia'],
+      'Saia + Blusa':['Busto','Cintura','Costado','Tamanho da manga','Largura da manga','Comprimento da blusa','Cintura da saia','Comprimento da saia'],
+      'Só Saia':     ['Cintura da saia','Quadril','Altura do quadril (saia)','Comprimento da saia'],
+      'Só Blusa':    ['Busto','Cintura','Costado','Altura da cava','Tamanho da manga','Largura da manga','Comprimento da blusa'],
+    };
+    return mapa[tipo] || MEDIDAS;
+  }
+
+  function medidaCard(nome, cli) {
+    const k = nome.replace(/\s+/g, '_');
+    const t = cli[k + '_total'] || '—';
+    const me = cli[k + '_metade'] || '—';
+    return `<div class="med-rel-item">
+      <div class="med-rel-nome">${nome}</div>
+      <div class="med-rel-vals">
+        <div class="med-rel-val"><strong>${t}</strong><span>total</span></div>
+        <div class="med-rel-val"><strong>${me}</strong><span>metade</span></div>
+      </div>
+    </div>`;
+  }
+
+  function renderPagamentoDetalhe(p) {
+    const pags = todosPagamentos.filter(pg => pg.PedidoID === p.ID);
+    const totalPago = pags.reduce((s, pg) => s + parseFloat(pg.Valor || 0), 0);
+    const precoFinal = parseFloat(p.PrecoFinal || 0);
+    const restante = precoFinal - totalPago;
+
+    document.getElementById('pag-resumo').innerHTML = `
+      <div class="pag-stat"><div class="pag-stat-val" style="color:var(--verde)">${fmtReais(precoFinal)}</div><div class="pag-stat-label">Preço final</div></div>
+      <div class="pag-stat"><div class="pag-stat-val" style="color:var(--azul)">${fmtReais(totalPago)}</div><div class="pag-stat-label">Recebido</div></div>
+      <div class="pag-stat"><div class="pag-stat-val" style="color:${restante > 0 ? 'var(--vermelho)' : 'var(--verde)'}">${fmtReais(restante)}</div><div class="pag-stat-label">Restante</div></div>`;
+
+    document.getElementById('det-precificacao').innerHTML = p.CustoTotal
+      ? `<div class="prec-linha"><span>Custo total</span><span>${fmtReais(p.CustoTotal)}</span></div>
+         <div class="prec-linha"><span>Margem</span><span>${fmtReais(precoFinal - parseFloat(p.CustoTotal||0))}</span></div>`
+      : '<div style="font-size:13px;color:var(--texto-3)">Precificação não calculada ainda.</div>';
+
+    document.getElementById('lista-pagamentos-det').innerHTML = pags.length
+      ? pags.map(pg => `<div class="pag-entrada">
+          <div><div style="font-size:14px;font-weight:500">${fmtReais(pg.Valor)}</div><div style="font-size:11px;color:var(--texto-3)">${fmtData(pg.Data)} · ${pg.Forma || '—'} ${pg.Observacoes ? '· ' + pg.Observacoes : ''}</div></div>
+          <span class="badge status-ativa">✓</span>
+        </div>`).join('')
+      : '<div style="font-size:13px;color:var(--texto-3);padding:8px 0">Nenhum pagamento registrado.</div>';
+  }
+
+  async function atualizarStatus() {
+    const p = todosPedidos.find(x => x.ID === pedidoAtualID);
+    if (!p) return;
+    p.Status = document.getElementById('det-status-sel').value;
+    loading(true, 'Atualizando...');
+    try {
+      await atualizarLinha(CONFIG.ABAS.PEDIDOS, p);
+      toast('Status atualizado!');
+      renderLista();
+    } catch(e) { toast('Erro ao atualizar', 'erro'); }
+    finally { loading(false); }
+  }
+
+  async function atualizarItemComp(itemID, clienteID, novoStatus) {
+    loading(true);
+    try {
+      if (itemID) {
+        const itens = await lerAba(CONFIG.ABAS.PEDIDOS_ITENS);
+        const item = itens.find(i => i.ID === itemID);
+        if (item) { item.Status = novoStatus; await atualizarLinha(CONFIG.ABAS.PEDIDOS_ITENS, item); }
+      } else {
+        await adicionarLinha(CONFIG.ABAS.PEDIDOS_ITENS, { ID: gerarID(), PedidoID: pedidoAtualID, ClienteID: clienteID, Status: novoStatus, DataEntrega: novoStatus === 'entregue' ? hoje() : '' });
+      }
+      toast('Status atualizado!');
+    } catch(e) { toast('Erro', 'erro'); }
+    finally { loading(false); }
+  }
+
+  function voltarLista() {
+    document.getElementById('tela-detalhe').style.display = 'none';
+    document.getElementById('tela-lista').style.display = 'block';
+    carregarDados();
+  }
+
+  function editarPedido() { toast('Em breve: edição de pedido', 'ok'); }
+
+  // ---- NOVO PEDIDO ----
+  function abrirNovoPedido() { abrirSheet('sheet-tipo'); }
+
+  function setTipoPedido(tipo) {
+    tipoPedidoNovo = tipo;
+    fecharSheet('sheet-tipo');
+    document.getElementById('sheet-pedido-titulo').textContent = tipo === 'grupo' ? 'Novo fardamento de grupo' : 'Novo pedido individual';
+    document.getElementById('campos-individual').style.display = tipo === 'individual' ? 'block' : 'none';
+    document.getElementById('campos-grupo').style.display = tipo === 'grupo' ? 'block' : 'none';
+    document.getElementById('p-prazo').value = '';
+    document.getElementById('p-desc').value = '';
+    document.getElementById('p-tecido').value = '';
+    document.getElementById('p-obs').value = '';
+    document.getElementById('p-cliente-id').value = '';
+    document.getElementById('p-cliente-sel').textContent = '';
+    document.getElementById('p-busca-cliente').value = '';
+    document.getElementById('p-lista-clientes').innerHTML = '';
+    abrirSheet('sheet-pedido');
+  }
+
+  function filtrarClientesPedido() {
+    const busca = document.getElementById('p-busca-cliente').value.toLowerCase();
+    const el = document.getElementById('p-lista-clientes');
+    if (!busca) { el.innerHTML = ''; return; }
+    const filtrados = todosClientes.filter(c => (c.Nome||'').toLowerCase().includes(busca)).slice(0, 6);
+    el.innerHTML = filtrados.map(c => `
+      <div style="padding:6px 8px;cursor:pointer;border-radius:6px;font-size:13px;color:var(--texto)" onclick="selecionarCliente('${c.ID}','${c.Nome}')">
+        ${c.Nome} <span style="color:var(--texto-3)">${c.Congregacao||''}</span>
+      </div>`).join('');
+  }
+
+  function selecionarCliente(id, nome) {
+    document.getElementById('p-cliente-id').value = id;
+    document.getElementById('p-cliente-sel').textContent = '✓ ' + nome;
+    document.getElementById('p-busca-cliente').value = nome;
+    document.getElementById('p-lista-clientes').innerHTML = '';
+  }
+
+  function carregarComponentesGrupo() {
+    const grupoID = document.getElementById('p-grupo-id').value;
+    const div = document.getElementById('componentes-preview');
+    const lista = document.getElementById('lista-comp-preview');
+    if (!grupoID) { div.style.display = 'none'; return; }
+    const comps = todosComponentes.filter(c => c.GrupoID === grupoID && !c.DataSaida);
+    div.style.display = 'block';
+    lista.innerHTML = comps.map(c => {
+      const cli = todosClientes.find(x => x.ID === c.ClienteID);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--cinza-borda);font-size:13px;">
+        <div class="avatar avatar-sm">${iniciais(cli?.Nome||'?')}</div>
+        ${cli?.Nome || '—'}
+      </div>`;
+    }).join('') || '<div style="font-size:12px;color:var(--texto-3);padding:6px 0">Nenhuma componente neste grupo</div>';
+  }
+
+  async function salvarPedido() {
+    const tipo = tipoPedidoNovo;
+    let clienteID = '', grupoID = '';
+    if (tipo === 'individual') {
+      clienteID = document.getElementById('p-cliente-id').value;
+      if (!clienteID) { toast('Selecione a cliente', 'erro'); return; }
+      if (!document.getElementById('p-tipo-peca').value) { toast('Selecione o tipo de peça', 'erro'); return; }
+    } else {
+      grupoID = document.getElementById('p-grupo-id').value;
+      if (!grupoID) { toast('Selecione o grupo', 'erro'); return; }
+      if (!document.getElementById('p-tipo-farda').value) { toast('Selecione o tipo de farda', 'erro'); return; }
+    }
+
+    loading(true, 'Criando pedido...');
+    try {
+      const obj = {
+        ID: gerarID(), Tipo: tipo, ClienteID: clienteID, GrupoID: grupoID,
+        TipoPeca: document.getElementById('p-tipo-peca')?.value || '',
+        TipoFarda: document.getElementById('p-tipo-farda')?.value || '',
+        Descricao: document.getElementById('p-desc').value,
+        Tecido: document.getElementById('p-tecido').value,
+        QuemCompraTecido: document.getElementById('p-quem-tecido').value,
+        Prazo: document.getElementById('p-prazo').value,
+        Status: document.getElementById('p-status').value,
+        Observacoes: document.getElementById('p-obs').value,
+        PrecoFinal: '', CustoTotal: '', DataCriacao: hoje()
+      };
+      await adicionarLinha(CONFIG.ABAS.PEDIDOS, obj);
+      toast('Pedido criado!');
+      fecharSheet('sheet-pedido');
+      await carregarDados();
+    } catch(e) { toast('Erro ao criar pedido', 'erro'); console.error(e); }
+    finally { loading(false); }
+  }
+
+  // ---- PRECIFICAÇÃO ----
+  async function abrirPrecificacao() {
+    const valorHora = await getConfig('valor_hora') || '50';
+    const margem = await getConfig('margem_lucro') || '30';
+    document.getElementById('pr-val-hora').value = valorHora;
+    document.getElementById('pr-margem').value = margem;
+    const p = todosPedidos.find(x => x.ID === pedidoAtualID);
+    if (p?.PrecoFinal) document.getElementById('pr-final').value = p.PrecoFinal;
+    calcPreco();
+    abrirSheet('sheet-prec');
+  }
+
+  function calcPreco() {
+    const metro = parseFloat(document.getElementById('pr-metro').value) || 0;
+    const valMetro = parseFloat(document.getElementById('pr-val-metro').value) || 0;
+    const aviamentos = parseFloat(document.getElementById('pr-aviamentos').value) || 0;
+    const horas = parseFloat(document.getElementById('pr-horas').value) || 0;
+    const valHora = parseFloat(document.getElementById('pr-val-hora').value) || 0;
+    const extras = parseFloat(document.getElementById('pr-extras').value) || 0;
+    const margem = parseFloat(document.getElementById('pr-margem').value) || 30;
+
+    const material = metro * valMetro + aviamentos;
+    const maoObra = horas * valHora;
+    const custo = material + maoObra + extras;
+    const margemVal = custo * (margem / 100);
+    const total = custo + margemVal;
+
+    document.getElementById('pr-res-mat').textContent = fmtReais(material);
+    document.getElementById('pr-res-mao').textContent = fmtReais(maoObra);
+    document.getElementById('pr-res-ext').textContent = fmtReais(extras);
+    document.getElementById('pr-res-custo').textContent = fmtReais(custo);
+    document.getElementById('pr-res-pct').textContent = margem;
+    document.getElementById('pr-res-margem').textContent = fmtReais(margemVal);
+    document.getElementById('pr-res-total').textContent = fmtReais(total);
+    document.getElementById('pr-final').placeholder = fmtReais(total);
+  }
+
+  async function salvarPrecificacao() {
+    const precoFinal = parseFloat(document.getElementById('pr-final').value);
+    if (!precoFinal) { toast('Informe o preço final', 'erro'); return; }
+    const metro = parseFloat(document.getElementById('pr-metro').value) || 0;
+    const valMetro = parseFloat(document.getElementById('pr-val-metro').value) || 0;
+    const aviamentos = parseFloat(document.getElementById('pr-aviamentos').value) || 0;
+    const horas = parseFloat(document.getElementById('pr-horas').value) || 0;
+    const valHora = parseFloat(document.getElementById('pr-val-hora').value) || 0;
+    const extras = parseFloat(document.getElementById('pr-extras').value) || 0;
+    const custo = metro * valMetro + aviamentos + horas * valHora + extras;
+
+    loading(true, 'Salvando preço...');
+    try {
+      const p = todosPedidos.find(x => x.ID === pedidoAtualID);
+      p.PrecoFinal = precoFinal;
+      p.CustoTotal = custo.toFixed(2);
+      await atualizarLinha(CONFIG.ABAS.PEDIDOS, p);
+      // Salvar no financeiro
+      await adicionarLinha(CONFIG.ABAS.FINANCEIRO_SAIDAS, {
+        ID: gerarID(), PedidoID: pedidoAtualID, Descricao: 'Custo de produção',
+        Valor: custo.toFixed(2), Data: hoje(), Categoria: 'producao'
+      });
+      toast('Preço confirmado!');
+      fecharSheet('sheet-prec');
+      renderPagamentoDetalhe(p);
+    } catch(e) { toast('Erro ao salvar preço', 'erro'); console.error(e); }
+    finally { loading(false); }
+  }
+
+  // ---- PAGAMENTOS ----
+  function abrirAddPagamento() {
+    document.getElementById('pg-data').value = hoje();
+    document.getElementById('pg-valor').value = '';
+    document.getElementById('pg-obs').value = '';
+    abrirSheet('sheet-pag');
+  }
+
+  async function salvarPagamento() {
+    const valor = parseFloat(document.getElementById('pg-valor').value);
+    if (!valor || valor <= 0) { toast('Informe o valor', 'erro'); return; }
+    loading(true, 'Registrando...');
+    try {
+      await adicionarLinha(CONFIG.ABAS.PAGAMENTOS, {
+        ID: gerarID(), PedidoID: pedidoAtualID, Valor: valor.toFixed(2),
+        Data: document.getElementById('pg-data').value,
+        Forma: document.getElementById('pg-forma').value,
+        Observacoes: document.getElementById('pg-obs').value,
+        Status: 'recebido'
+      });
+      todosPagamentos = await lerAba(CONFIG.ABAS.PAGAMENTOS);
+      toast('Pagamento registrado!');
+      fecharSheet('sheet-pag');
+      const p = todosPedidos.find(x => x.ID === pedidoAtualID);
+      renderPagamentoDetalhe(p);
+    } catch(e) { toast('Erro ao registrar pagamento', 'erro'); console.error(e); }
+    finally { loading(false); }
+  }
+
+  function abaAtiva(id, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+    document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+    if (el) el.classList.add('ativo');
+    document.getElementById('aba-' + id).classList.add('ativa');
+    if (id === 'medidas') {
+      const p = todosPedidos.find(x => x.ID === pedidoAtualID);
+      if (p) renderMedidasDetalhe(p);
+    }
+  }
+
+  function abrirSheet(id) { document.getElementById(id).classList.add('aberto'); }
+  function fecharSheet(id) { document.getElementById(id).classList.remove('aberto'); }
+  document.querySelectorAll('.sheet-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('aberto'); });
+  });
+</script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+</body>
+</html>

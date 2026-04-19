@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Configurações — Ateliê</title>
+  <link rel="stylesheet" href="global.css">
+  <style>
+    .config-section { margin-bottom: 28px; }
+    .config-item { background: var(--bg-card); border: 1px solid var(--cinza-borda); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+    .config-label { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .config-desc { font-size: 12px; color: var(--texto-3); margin-bottom: 8px; }
+    .instrucao-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--cinza-borda); }
+    .instrucao-step:last-child { border-bottom: none; }
+    .instrucao-num { width: 24px; height: 24px; border-radius: 50%; background: var(--verde); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+    .instrucao-texto { font-size: 13px; color: var(--texto-2); line-height: 1.6; }
+    .instrucao-texto a { color: var(--verde); }
+  </style>
+</head>
+<body>
+<div class="page-header">
+  <h1>Configurações</h1>
+</div>
+<div class="page">
+
+  <div class="config-section">
+    <div class="section-label">Dados do ateliê</div>
+    <div class="config-item">
+      <div class="config-label">Nome do ateliê</div>
+      <input type="text" id="cfg-nome" placeholder="Ex: Ateliê da Costura">
+    </div>
+  </div>
+
+  <div class="config-section">
+    <div class="section-label">Precificação padrão</div>
+    <div class="config-item">
+      <div class="config-label">Valor da hora de trabalho (R$)</div>
+      <div class="config-desc">Usado como padrão na calculadora de preços</div>
+      <input type="number" id="cfg-hora" step="0.5" placeholder="50">
+    </div>
+    <div class="config-item">
+      <div class="config-label">Margem de lucro padrão (%)</div>
+      <div class="config-desc">Percentual aplicado sobre o custo total</div>
+      <input type="number" id="cfg-margem" step="1" placeholder="30">
+    </div>
+  </div>
+
+  <div class="config-section">
+    <div class="section-label">Clientes e status</div>
+    <div class="config-item">
+      <div class="config-label">Meses para considerar cliente inativa</div>
+      <div class="config-desc">Clientes sem pedido após este período aparecem como inativas</div>
+      <select id="cfg-inativa">
+        <option value="12">12 meses</option>
+        <option value="18">18 meses</option>
+        <option value="24">24 meses</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-full" onclick="salvarConfigs()">Salvar configurações</button>
+
+  <div class="config-section" style="margin-top:28px;">
+    <div class="section-label">Como publicar no GitHub Pages</div>
+    <div class="config-item">
+      <div class="instrucao-step">
+        <div class="instrucao-num">1</div>
+        <div class="instrucao-texto">Crie uma conta em <a href="https://github.com" target="_blank">github.com</a> se ainda não tiver</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">2</div>
+        <div class="instrucao-texto">Crie um repositório novo chamado <strong>atelie</strong> (público)</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">3</div>
+        <div class="instrucao-texto">Faça upload de todos os arquivos do sistema</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">4</div>
+        <div class="instrucao-texto">Vá em Settings → Pages → Source: Deploy from branch → main → / (root) → Save</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">5</div>
+        <div class="instrucao-texto">Seu sistema estará em <strong>seuusuario.github.io/atelie</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section">
+    <div class="section-label">Como configurar o Google OAuth</div>
+    <div class="config-item">
+      <div class="instrucao-step">
+        <div class="instrucao-num">1</div>
+        <div class="instrucao-texto">Acesse <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> com a conta do Google</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">2</div>
+        <div class="instrucao-texto">Crie um novo projeto chamado "Ateliê da Costura"</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">3</div>
+        <div class="instrucao-texto">Vá em APIs e Serviços → Ativar: Google Sheets API e Google Drive API</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">4</div>
+        <div class="instrucao-texto">Vá em Credenciais → Criar credenciais → ID do cliente OAuth 2.0 → Aplicativo da Web</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">5</div>
+        <div class="instrucao-texto">Em "Origens JavaScript autorizadas", adicione sua URL do GitHub Pages (ex: https://seuusuario.github.io)</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">6</div>
+        <div class="instrucao-texto">Copie o Client ID gerado e cole no arquivo <strong>js/config.js</strong> no campo CLIENT_ID</div>
+      </div>
+      <div class="instrucao-step">
+        <div class="instrucao-num">7</div>
+        <div class="instrucao-texto">Crie uma planilha Google Sheets em branco, copie o ID da URL (entre /d/ e /edit) e cole no campo SHEET_ID do mesmo arquivo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section">
+    <div class="section-label">Conta</div>
+    <button class="btn btn-full btn-danger" onclick="confirmarSair()">Sair da conta Google</button>
+  </div>
+
+</div>
+<nav id="navbar"></nav>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+  protegerPagina(async () => {
+    renderNav('configuracoes');
+    await carregarConfigs();
+  });
+
+  async function carregarConfigs() {
+    loading(true);
+    try {
+      const [nome, hora, margem, inativa] = await Promise.all([
+        getConfig('nome_atelie'), getConfig('valor_hora'),
+        getConfig('margem_lucro'), getConfig('meses_inativo')
+      ]);
+      document.getElementById('cfg-nome').value = nome || CONFIG.NOME_ATELIE;
+      document.getElementById('cfg-hora').value = hora || '50';
+      document.getElementById('cfg-margem').value = margem || '30';
+      document.getElementById('cfg-inativa').value = inativa || '12';
+    } finally { loading(false); }
+  }
+
+  async function salvarConfigs() {
+    loading(true, 'Salvando...');
+    try {
+      await Promise.all([
+        setConfig('nome_atelie', document.getElementById('cfg-nome').value),
+        setConfig('valor_hora', document.getElementById('cfg-hora').value),
+        setConfig('margem_lucro', document.getElementById('cfg-margem').value),
+        setConfig('meses_inativo', document.getElementById('cfg-inativa').value),
+      ]);
+      toast('Configurações salvas!');
+    } catch(e) { toast('Erro ao salvar', 'erro'); }
+    finally { loading(false); }
+  }
+
+  function confirmarSair() {
+    if (confirmar('Sair da conta Google? Você precisará fazer login novamente.')) logout();
+  }
+</script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+</body>
+</html>

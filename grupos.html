@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Grupos — Ateliê</title>
+  <link rel="stylesheet" href="global.css">
+  <style>
+    .grupo-card { display: flex; align-items: center; gap: 12px; }
+    .grupo-info { flex: 1; min-width: 0; }
+    .grupo-nome { font-size: 15px; font-weight: 500; }
+    .grupo-meta { font-size: 12px; color: var(--texto-2); margin-top: 2px; }
+    .grupo-badge { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+    .tabs { display: flex; border-bottom: 1px solid var(--cinza-borda); margin-bottom: 16px; }
+    .tab { flex: 1; padding: 10px 4px; text-align: center; font-size: 13px; font-weight: 500; color: var(--texto-3); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+    .tab.ativo { color: var(--verde); border-bottom-color: var(--verde); }
+    .aba { display: none; }
+    .aba.ativa { display: block; }
+
+    .membro-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--cinza-borda); }
+    .membro-item:last-child { border-bottom: none; }
+    .membro-info { flex: 1; }
+    .membro-nome { font-size: 14px; font-weight: 500; }
+    .membro-medidas { font-size: 11px; color: var(--texto-3); margin-top: 2px; }
+
+    .hist-farda { padding: 10px 0; border-bottom: 1px solid var(--cinza-borda); }
+    .hist-farda:last-child { border-bottom: none; }
+    .hist-farda-top { display: flex; justify-content: space-between; align-items: center; }
+    .hist-farda-tipo { font-size: 14px; font-weight: 500; }
+    .hist-farda-data { font-size: 12px; color: var(--texto-2); margin-top: 3px; }
+    .hist-farda-qtd { font-size: 12px; color: var(--texto-3); }
+
+    .mes-badge { width: 44px; height: 44px; border-radius: var(--radius); background: var(--verde-light); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--verde-dark); text-align: center; flex-shrink: 0; line-height: 1.2; }
+  </style>
+</head>
+<body>
+
+<div id="tela-lista">
+  <div class="page-header">
+    <h1>Grupos</h1>
+  </div>
+  <div class="page">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" placeholder="Buscar por nome ou congregação..." id="input-busca" oninput="renderLista()">
+    </div>
+    <div id="lista-grupos"></div>
+    <div id="empty-grupos" class="empty" style="display:none">
+      <div class="empty-icon">🏛</div>
+      <p>Nenhum grupo cadastrado.<br>Toque no + para cadastrar.</p>
+    </div>
+  </div>
+  <button class="fab" onclick="abrirNovoGrupo()">+</button>
+</div>
+
+<div id="tela-perfil" style="display:none">
+  <div class="page-header">
+    <button class="btn btn-ghost btn-sm" onclick="voltarLista()">← Voltar</button>
+    <h1 style="flex:1;font-size:16px;" id="perfil-titulo">Grupo</h1>
+    <button class="btn btn-sm" onclick="editarGrupo()">Editar</button>
+  </div>
+  <div class="page">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+      <div class="avatar avatar-lg avatar-grupo" id="perfil-avatar"></div>
+      <div style="flex:1">
+        <div style="font-family:var(--fonte-titulo);font-size:20px;" id="perfil-nome"></div>
+        <div style="font-size:13px;color:var(--texto-2);margin-top:2px;" id="perfil-congregacao"></div>
+        <div style="font-size:13px;color:var(--texto-2);margin-top:2px;" id="perfil-resp"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--verde-light);border-radius:var(--radius);margin-bottom:16px;">
+      <div class="mes-badge" id="perfil-mes"></div>
+      <div>
+        <div style="font-size:12px;color:var(--verde-dark);font-weight:500;">Mês da festividade recorrente</div>
+        <div style="font-size:12px;color:var(--texto-2);margin-top:2px;">Alerta para contato enviado 60 dias antes</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab ativo" onclick="abaAtiva('membros', this)">Componentes</div>
+      <div class="tab" onclick="abaAtiva('historico', this)">Histórico</div>
+    </div>
+
+    <div id="aba-membros" class="aba ativa">
+      <div id="lista-membros"></div>
+      <button class="btn btn-full" style="margin-top:10px" onclick="abrirAddMembro()">+ Adicionar componente</button>
+    </div>
+
+    <div id="aba-historico" class="aba">
+      <div id="lista-historico"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET: NOVO/EDITAR GRUPO -->
+<div class="sheet-overlay" id="sheet-grupo">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-titulo" id="sheet-grupo-titulo">Novo grupo</div>
+    <div class="form-group">
+      <label class="form-label">Nome do grupo <span class="req">*</span></label>
+      <input type="text" id="g-nome" placeholder="Ex: Grupo de Mulheres Betel">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Congregação / Igreja</label>
+      <input type="text" id="g-congregacao" placeholder="Nome da igreja">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Responsável pelo contato</label>
+      <input type="text" id="g-resp" placeholder="Nome da responsável">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Telefone da responsável</label>
+      <input type="tel" id="g-tel" placeholder="(81) 99999-9999">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mês da festividade recorrente</label>
+      <select id="g-mes">
+        <option value="">Não definido</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea id="g-obs" placeholder="Estilo preferido, cores, detalhes do grupo..."></textarea>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="salvarGrupo()">Salvar grupo</button>
+    <button class="btn btn-full btn-ghost" onclick="fecharSheet('sheet-grupo')" style="margin-top:6px">Cancelar</button>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<!-- SHEET: ADICIONAR MEMBRO -->
+<div class="sheet-overlay" id="sheet-membro">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-titulo">Adicionar componente</div>
+    <div class="form-group">
+      <label class="form-label">Buscar cliente cadastrada</label>
+      <input type="text" id="busca-membro" placeholder="Digite o nome..." oninput="filtrarMembros()">
+    </div>
+    <div id="lista-busca-membros" style="max-height:300px;overflow-y:auto;"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--cinza-borda);">
+      <div style="font-size:12px;color:var(--texto-3);margin-bottom:8px;">Ou cadastre uma nova cliente</div>
+      <button class="btn btn-full" onclick="window.location.href='clientes.html'">Ir para Clientes</button>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<nav id="navbar"></nav>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let todosGrupos = [];
+  let todosClientes = [];
+  let todosComponentes = [];
+  let todosPedidos = [];
+  let grupoAtualID = null;
+  let editandoGrupo = null;
+
+  protegerPagina(async () => {
+    renderNav('grupos');
+    preencherMeses();
+    await carregarDados();
+  });
+
+  async function carregarDados() {
+    loading(true, 'Carregando grupos...');
+    try {
+      [todosGrupos, todosClientes, todosComponentes, todosPedidos] = await Promise.all([
+        lerAba(CONFIG.ABAS.GRUPOS),
+        lerAba(CONFIG.ABAS.CLIENTES),
+        lerAba(CONFIG.ABAS.GRUPOS_COMPONENTES),
+        lerAba(CONFIG.ABAS.PEDIDOS)
+      ]);
+      renderLista();
+    } finally { loading(false); }
+  }
+
+  function renderLista() {
+    const busca = document.getElementById('input-busca').value.toLowerCase();
+    const lista = todosGrupos.filter(g => !busca ||
+      (g.Nome||'').toLowerCase().includes(busca) ||
+      (g.Congregacao||'').toLowerCase().includes(busca));
+
+    const el = document.getElementById('lista-grupos');
+    const empty = document.getElementById('empty-grupos');
+    if (!lista.length) { el.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    el.innerHTML = lista.map(g => {
+      const nMembros = todosComponentes.filter(c => c.GrupoID === g.ID).length;
+      const mesLabel = g.MesFestividade ? MESES[parseInt(g.MesFestividade)-1] : null;
+      return `<div class="card card-clickable grupo-card" onclick="verPerfil('${g.ID}')">
+        <div class="avatar avatar-md avatar-grupo">${iniciais(g.Nome)}</div>
+        <div class="grupo-info">
+          <div class="grupo-nome">${g.Nome}</div>
+          <div class="grupo-meta">${g.Congregacao || 'Sem congregação'} · ${g.Responsavel || 'Sem responsável'}</div>
+        </div>
+        <div class="grupo-badge">
+          <span class="badge" style="background:var(--azul-light);color:var(--azul)">${nMembros} comp.</span>
+          ${mesLabel ? `<span style="font-size:11px;color:var(--texto-3)">${mesLabel}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function verPerfil(id) {
+    const g = todosGrupos.find(x => x.ID === id);
+    if (!g) return;
+    grupoAtualID = id;
+
+    document.getElementById('perfil-titulo').textContent = g.Nome;
+    document.getElementById('perfil-avatar').textContent = iniciais(g.Nome);
+    document.getElementById('perfil-nome').textContent = g.Nome;
+    document.getElementById('perfil-congregacao').textContent = g.Congregacao || 'Sem congregação';
+    document.getElementById('perfil-resp').textContent = g.Responsavel
+      ? `Resp: ${g.Responsavel}${g.TelResponsavel ? ' · ' + g.TelResponsavel : ''}` : '';
+    const mesLabel = g.MesFestividade ? MESES[parseInt(g.MesFestividade)-1] : '—';
+    document.getElementById('perfil-mes').textContent = mesLabel.slice(0,3).toUpperCase();
+
+    renderMembros(id);
+    renderHistorico(id);
+    abaAtiva('membros', document.querySelector('.tab'));
+
+    document.getElementById('tela-lista').style.display = 'none';
+    document.getElementById('tela-perfil').style.display = 'block';
+  }
+
+  function renderMembros(grupoID) {
+    const el = document.getElementById('lista-membros');
+    const comps = todosComponentes.filter(c => c.GrupoID === grupoID);
+    if (!comps.length) { el.innerHTML = '<div class="empty"><p>Nenhuma componente adicionada.</p></div>'; return; }
+    el.innerHTML = comps.map(c => {
+      const cli = todosClientes.find(x => x.ID === c.ClienteID);
+      if (!cli) return '';
+      const temMedidas = cli.Busto_total || cli['Busto_total'];
+      return `<div class="membro-item">
+        <div class="avatar avatar-sm">${iniciais(cli.Nome)}</div>
+        <div class="membro-info">
+          <div class="membro-nome">${cli.Nome}</div>
+          <div class="membro-medidas">${cli.Telefone || ''} · ${temMedidas ? 'Medidas ok' : 'Sem medidas'}</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="removerMembro('${c.ID}', '${cli.Nome}')">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  function renderHistorico(grupoID) {
+    const el = document.getElementById('lista-historico');
+    const pedidos = todosPedidos.filter(p => p.GrupoID === grupoID)
+      .sort((a,b) => new Date(b.DataCriacao) - new Date(a.DataCriacao));
+    if (!pedidos.length) { el.innerHTML = '<div class="empty"><p>Nenhum fardamento registrado ainda.</p></div>'; return; }
+    el.innerHTML = pedidos.map(p => `
+      <div class="hist-farda">
+        <div class="hist-farda-top">
+          <div class="hist-farda-tipo">${p.TipoFarda || p.TipoPeca || '—'}</div>
+          ${badgePedido(p.Status)}
+        </div>
+        <div class="hist-farda-data">${fmtData(p.DataCriacao)}</div>
+        <div class="hist-farda-qtd">${p.Descricao || ''}</div>
+      </div>`).join('');
+  }
+
+  function voltarLista() {
+    document.getElementById('tela-perfil').style.display = 'none';
+    document.getElementById('tela-lista').style.display = 'block';
+  }
+
+  function abaAtiva(id, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+    document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+    if (el) el.classList.add('ativo');
+    document.getElementById('aba-' + id).classList.add('ativa');
+  }
+
+  // ---- FORM GRUPO ----
+  function preencherMeses() {
+    const sels = document.querySelectorAll('#g-mes');
+    sels.forEach(sel => {
+      MESES.forEach((m, i) => { sel.innerHTML += `<option value="${i+1}">${m}</option>`; });
+    });
+  }
+
+  function abrirNovoGrupo() {
+    editandoGrupo = null;
+    document.getElementById('sheet-grupo-titulo').textContent = 'Novo grupo';
+    ['g-nome','g-congregacao','g-resp','g-tel','g-obs'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('g-mes').value = '';
+    abrirSheet('sheet-grupo');
+  }
+
+  function editarGrupo() {
+    const g = todosGrupos.find(x => x.ID === grupoAtualID);
+    if (!g) return;
+    editandoGrupo = g;
+    document.getElementById('sheet-grupo-titulo').textContent = 'Editar grupo';
+    document.getElementById('g-nome').value = g.Nome;
+    document.getElementById('g-congregacao').value = g.Congregacao || '';
+    document.getElementById('g-resp').value = g.Responsavel || '';
+    document.getElementById('g-tel').value = g.TelResponsavel || '';
+    document.getElementById('g-mes').value = g.MesFestividade || '';
+    document.getElementById('g-obs').value = g.Observacoes || '';
+    abrirSheet('sheet-grupo');
+  }
+
+  async function salvarGrupo() {
+    const nome = document.getElementById('g-nome').value.trim();
+    if (!nome) { toast('Informe o nome do grupo', 'erro'); return; }
+    loading(true, 'Salvando...');
+    try {
+      const obj = {
+        Nome: nome,
+        Congregacao: document.getElementById('g-congregacao').value,
+        Responsavel: document.getElementById('g-resp').value,
+        TelResponsavel: document.getElementById('g-tel').value,
+        MesFestividade: document.getElementById('g-mes').value,
+        Observacoes: document.getElementById('g-obs').value,
+      };
+      if (editandoGrupo) {
+        await atualizarLinha(CONFIG.ABAS.GRUPOS, { ...editandoGrupo, ...obj });
+        toast('Grupo atualizado!');
+      } else {
+        await adicionarLinha(CONFIG.ABAS.GRUPOS, { ID: gerarID(), DataCriacao: hoje(), ...obj });
+        toast('Grupo cadastrado!');
+      }
+      fecharSheet('sheet-grupo');
+      await carregarDados();
+      if (editandoGrupo) verPerfil(editandoGrupo.ID);
+    } catch(e) { toast('Erro ao salvar', 'erro'); console.error(e); }
+    finally { loading(false); }
+  }
+
+  // ---- MEMBROS ----
+  function abrirAddMembro() {
+    document.getElementById('busca-membro').value = '';
+    filtrarMembros();
+    abrirSheet('sheet-membro');
+  }
+
+  function filtrarMembros() {
+    const busca = document.getElementById('busca-membro').value.toLowerCase();
+    const jaNoGrupo = todosComponentes.filter(c => c.GrupoID === grupoAtualID).map(c => c.ClienteID);
+    const disponiveis = todosClientes.filter(c =>
+      c.Nome && !jaNoGrupo.includes(c.ID) &&
+      (!busca || c.Nome.toLowerCase().includes(busca) || (c.Congregacao||'').toLowerCase().includes(busca))
+    );
+    const el = document.getElementById('lista-busca-membros');
+    if (!disponiveis.length) { el.innerHTML = '<div style="font-size:13px;color:var(--texto-3);padding:8px 0;">Nenhuma cliente encontrada</div>'; return; }
+    el.innerHTML = disponiveis.map(c => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cinza-borda);">
+        <div class="avatar avatar-sm">${iniciais(c.Nome)}</div>
+        <div style="flex:1;font-size:14px;">${c.Nome}<div style="font-size:11px;color:var(--texto-3)">${c.Congregacao||''}</div></div>
+        <button class="btn btn-sm btn-primary" onclick="adicionarMembro('${c.ID}')">Adicionar</button>
+      </div>`).join('');
+  }
+
+  async function adicionarMembro(clienteID) {
+    loading(true, 'Adicionando...');
+    try {
+      await adicionarLinha(CONFIG.ABAS.GRUPOS_COMPONENTES, {
+        ID: gerarID(), GrupoID: grupoAtualID, ClienteID: clienteID, DataEntrada: hoje()
+      });
+      todosComponentes = await lerAba(CONFIG.ABAS.GRUPOS_COMPONENTES);
+      toast('Componente adicionada!');
+      fecharSheet('sheet-membro');
+      renderMembros(grupoAtualID);
+    } catch(e) { toast('Erro ao adicionar', 'erro'); }
+    finally { loading(false); }
+  }
+
+  async function removerMembro(compID, nome) {
+    if (!confirmar(`Remover ${nome} do grupo?`)) return;
+    const comp = todosComponentes.find(c => c.ID === compID);
+    if (!comp) return;
+    // Marca como removido (não apaga linha do Sheets — coloca data de saída)
+    loading(true);
+    try {
+      await atualizarLinha(CONFIG.ABAS.GRUPOS_COMPONENTES, { ...comp, DataSaida: hoje() });
+      todosComponentes = todosComponentes.filter(c => c.ID !== compID);
+      toast(`${nome} removida do grupo`);
+      renderMembros(grupoAtualID);
+    } catch(e) { toast('Erro ao remover', 'erro'); }
+    finally { loading(false); }
+  }
+
+  function abrirSheet(id) { document.getElementById(id).classList.add('aberto'); }
+  function fecharSheet(id) { document.getElementById(id).classList.remove('aberto'); }
+  document.querySelectorAll('.sheet-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('aberto'); });
+  });
+</script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+</body>
+</html>
