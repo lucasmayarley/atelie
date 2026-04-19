@@ -66,10 +66,9 @@
     });
     // Redireciona após login
     const orig = window.initGoogleAuth;
-    initGoogleAuth(() => {
-      if (isLoggedIn()) window.location.href = 'pedidos.html';
-    });
-  </script>
-  <script src="https://accounts.google.com/gsi/client" async></script>
+    </script>
+  <script src="https://accounts.google.com/gsi/client" 
+    onload="initGoogleAuth(() => { if (isLoggedIn()) window.location.href = 'pedidos.html'; })"
+    async defer></script>
 </body>
 </html>
